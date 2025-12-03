@@ -1,10 +1,11 @@
 from dependencies import get_session
 from models import Flight, Aircraft, Airport
-from schemas.flights import FlightRead
-from services import FlightReportService
+from schemas.flights import FlightRead, FlightCreate
+from services import FlightService, FlightReportService
 from sqlalchemy import select, exc
 from sqlalchemy.orm import Session, aliased
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.responses import JSONResponse
 
 
 router = APIRouter(prefix="/flights", tags=["flights"])
@@ -32,6 +33,24 @@ def read_flight(
     except exc.NoResultFound:
         raise HTTPException(status_code=404, detail="Flight not found")
     return flight
+
+
+@router.post("/")
+def create_flight(
+    flight_data: FlightCreate,
+    session: Session = Depends(get_session)
+):
+    try:
+        flight = FlightService.create_flight(session, flight_data)
+    except Exception as e:
+        return JSONResponse(
+            {"success": False, "errors": [str(e)]},
+            status_code=422
+        )
+
+    session.add(flight)
+    session.commit()
+    return JSONResponse({"success": True, "errors": []}, status_code=200)
 
 
 @router.get("/{flight_number}/report")
