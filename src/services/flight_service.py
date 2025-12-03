@@ -1,4 +1,3 @@
-from db import SessionLocal
 from models import Flight, Airport, Aircraft, Seat
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -59,18 +58,17 @@ class FlightService():
 
         self.session.add(flight)
         self.session.commit()
-
-        print(f"Flight {flight_number} created successfully!")
         return flight
 
-
-    def get_duration(self, flight: Flight) -> float:
+    @classmethod
+    def get_duration(cls, flight: Flight) -> float:
         delta = flight.arrival_time - flight.departure_time
         return delta.total_seconds() / 3600
 
 
-    def calculate_fuel(self, flight: Flight) -> float:
-        duration = self.get_duration(flight)
+    @classmethod
+    def calculate_fuel(cls, flight: Flight) -> float:
+        duration = cls.get_duration(flight)
         return float(flight.aircraft.fuel_per_hour) * duration
 
 
