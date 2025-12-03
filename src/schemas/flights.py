@@ -29,3 +29,14 @@ class FlightRead(BaseModel):
     business_price: Decimal = Field(ge=1)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class FlightCreate(BaseModel):
+    flight_number: str = Field(max_length=5)
+    aircraft_tail_number: str = Field(max_length=10)
+    dep_airport_code: str = Field(max_length=3)
+    arr_airport_code: str = Field(max_length=3)
+    departure_time: datetime
+    arrival_time: datetime
+    economy_price: Decimal = Field(ge=1.0)
+    business_price: Decimal = Field(ge=1.0)

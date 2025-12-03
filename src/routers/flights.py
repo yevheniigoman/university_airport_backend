@@ -2,9 +2,8 @@ from dependencies import get_session
 from models import Flight, Aircraft, Airport
 from schemas.flights import FlightRead
 from services import FlightReportService
-from sqlalchemy import select
+from sqlalchemy import select, exc
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy import exc
 from fastapi import APIRouter, Depends, HTTPException, Response
 
 
