@@ -1,5 +1,5 @@
 from auth import fastapi_auth, auth_backend
-from routers import flights, tickets, airports
+from routers import flights, tickets, airports, cities
 from schemas.auth import UserRead, UserCreate
 import uvicorn
 from fastapi import FastAPI
@@ -21,6 +21,7 @@ app.include_router(
 app.include_router(flights.router)
 app.include_router(tickets.router)
 app.include_router(airports.router)
+app.include_router(cities.router)
 
 
 @app.get("/")
