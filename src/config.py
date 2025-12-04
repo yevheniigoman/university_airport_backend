@@ -5,6 +5,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str
+    SECRET: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

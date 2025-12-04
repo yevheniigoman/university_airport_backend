@@ -3,3 +3,4 @@ __pycache__
 .env
 .idea
 src/test_services.py
+data
