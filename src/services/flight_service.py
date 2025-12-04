@@ -46,7 +46,7 @@ class FlightService():
         return flight
 
     @staticmethod
-    def get_duration(cls, flight: Flight) -> float:
+    def get_duration(flight: Flight) -> float:
         delta = flight.arrival_time - flight.departure_time
         return delta.total_seconds() / 3600
 

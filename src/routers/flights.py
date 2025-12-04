@@ -1,4 +1,5 @@
 from dependencies import get_session
+from auth import get_current_active_user
 from models import Flight, Aircraft, Airport
 from schemas.flights import FlightRead, FlightCreate
 from services import FlightService, FlightReportService
@@ -35,7 +36,7 @@ def read_flight(
     return flight
 
 
-@router.post("/", tags=["flights"])
+@router.post("/", tags=["flights"], dependencies=[Depends(get_current_active_user)])
 def create_flight(
     flight_data: FlightCreate,
     session: Session = Depends(get_session)
@@ -53,7 +54,7 @@ def create_flight(
     return JSONResponse({"success": True, "errors": []}, status_code=200)
 
 
-@router.get("/{flight_number}/report", tags=["reports"])
+@router.get("/{flight_number}/report", tags=["reports"], dependencies=[Depends(get_current_active_user)])
 def generate_flight_report(
     flight_number: str,
     session: Session = Depends(get_session),
