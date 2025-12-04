@@ -30,38 +30,5 @@ def index():
     return {"name": "Aiport ticket database"}
 
 
-from dependencies import get_session
-from services import TicketReportService
-from models import Ticket, Flight, Seat
-from sqlalchemy import select
-from sqlalchemy.orm import Session, exc
-from fastapi import Depends, HTTPException, Response
-@app.get("/tickets/{ticket_id}/buy")
-def buy_ticket(ticket_id: int, session: Session = Depends(get_session)):
-    stmt = (
-        select(Ticket)
-        .join(Flight, Ticket.flight_id == Flight.id)
-        .join(Seat, Ticket.seat_id == Seat.id)
-        .where(Ticket.id == ticket_id)
-    )
-    result = session.execute(stmt)
-    try:
-        ticket = result.scalars().one()
-    except exc.NoResultFound:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-    
-    pdf = TicketReportService.to_pdf(ticket)
-
-    filename = f"ticket_{ticket_id}.pdf"
-    headers = {
-        f"Content-Disposition": f"attachment; filename={filename}"
-    }
-    return Response(
-        bytes(pdf.output()),
-        media_type="application/pdf",
-        headers=headers
-    )
-
-
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
