@@ -60,7 +60,6 @@ class FlightService():
         self.session.add(flight)
         self.session.commit()
 
-        print(f"Flight {flight_number} created successfully!")
         return flight
 
 
