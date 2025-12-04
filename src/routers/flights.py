@@ -1,17 +1,18 @@
 from dependencies import get_session
 from models import Flight, Aircraft, Airport
 from schemas.flights import FlightRead, FlightCreate
+from schemas.tickets import TicketRead
 from services import FlightService, FlightReportService
 from sqlalchemy import select, exc
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session, aliased, joinedload
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse
 
 
-router = APIRouter(prefix="/flights", tags=["flights"])
+router = APIRouter(prefix="/flights")
 
 
-@router.get("/{flight_number}", response_model=FlightRead)
+@router.get("/{flight_number}", tags=["flights"], response_model=FlightRead)
 def read_flight(
     flight_number: str,
     session: Session = Depends(get_session)
@@ -35,7 +36,7 @@ def read_flight(
     return flight
 
 
-@router.post("/")
+@router.post("/", tags=["flights"])
 def create_flight(
     flight_data: FlightCreate,
     session: Session = Depends(get_session)
@@ -53,7 +54,29 @@ def create_flight(
     return JSONResponse({"success": True, "errors": []}, status_code=200)
 
 
-@router.get("/{flight_number}/report")
+@router.get("/{flight_number}/tickets", tags=["tickets"], response_model=list[TicketRead])
+def read_flight_tickets(
+    flight_number: str,
+    session: Session = Depends(get_session)
+):
+    """Returns tickets for specified flight"""
+    stmt = (
+        select(Flight)
+        .options(joinedload(Flight.tickets))
+        .where(Flight.flight_number == flight_number)
+    )
+    print(str(stmt))
+    result = session.execute(stmt)
+    try:
+        flight = result.unique().scalars().one()
+        print(flight)
+    except exc.NoResultFound:
+        raise HTTPException(status_code=404, detail="Flight not found")
+    
+    return flight.tickets
+
+
+@router.get("/{flight_number}/report", tags=["reports"])
 def generate_flight_report(
     flight_number: str,
     session: Session = Depends(get_session),
