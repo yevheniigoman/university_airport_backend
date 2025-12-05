@@ -40,3 +40,9 @@ class FlightCreate(BaseModel):
     arrival_time: datetime
     economy_price: Decimal = Field(ge=1.0)
     business_price: Decimal = Field(ge=1.0)
+
+
+class FlightSeatsMap(BaseModel):
+    seat_number: str
+    seat_class: int
+    is_reserved: bool
