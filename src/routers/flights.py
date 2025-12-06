@@ -1,9 +1,9 @@
 from dependencies import get_session
 from auth import get_current_active_user
-from models import Flight, Aircraft, Airport
-from schemas.flights import FlightRead, FlightCreate
+from models import Flight, Aircraft, Airport, Seat, Ticket
+from schemas.flights import FlightRead, FlightCreate, FlightSeatsMap
 from services import FlightService, FlightReportService
-from sqlalchemy import select, exc
+from sqlalchemy import select, exc, case
 from sqlalchemy.orm import Session, aliased
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse
@@ -103,6 +103,33 @@ def generate_flight_report(
         media_type="application/pdf",
         headers=headers
     )
+
+
+@router.get("/{flight_number}/seatsmap", tags=["flights"], response_model=list[FlightSeatsMap])
+def read_seats_map(flight_number: str, session: Session = Depends(get_session)):
+    """
+    Returns which seats are reserved and which are not for specified flight.
+    """
+    # find specified flight
+    stmt = select(Flight).where(Flight.flight_number == flight_number)
+    result = session.execute(stmt)
+    try:
+        flight = result.scalars().one()
+    except exc.NoResultFound:
+        raise HTTPException(status_code=404, detail="No flight found")
+
+    # get all seats (and whether it is reserved or not) for this flight
+    seat_status_expr = case(
+        (Ticket.id.is_not(None), True),
+        else_=False
+    ).label("is_reserved")
+    stmt = (
+        select(Seat.seat_number, Seat.seat_class, seat_status_expr)
+        .outerjoin(Ticket, Seat.id == Ticket.seat_id)
+        .where(Seat.aircraft_id == flight.aircraft_id)
+    )
+    result = session.execute(stmt)
+    return result.mappings().all()
 
 
 
