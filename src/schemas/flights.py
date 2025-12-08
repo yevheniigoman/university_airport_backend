@@ -2,10 +2,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from decimal import Decimal
 from datetime import datetime
+from typing import TypedDict
 
 
 class AircraftInFlightRead(BaseModel):
     tail_number: str = Field(max_length=10)
+    model: str = Field(max_length=50)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -42,7 +44,11 @@ class FlightCreate(BaseModel):
     business_price: Decimal = Field(ge=1.0)
 
 
-class FlightSeatsMap(BaseModel):
-    seat_number: str
+class Seat(BaseModel):
     seat_class: int
     is_reserved: bool
+
+class FlightSeatsMap(BaseModel):
+    rows: list[int]
+    cols: list[str]
+    seats: dict[str, Seat]
