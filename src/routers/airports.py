@@ -1,5 +1,5 @@
 from dependencies import get_session
-from models import Airport
+from models import Airport, City
 from schemas.airports import AirportRead
 from sqlalchemy import select, exc
 from sqlalchemy.orm import Session
@@ -21,7 +21,11 @@ def read_airport(
     airport_code: str,
     session: Session = Depends(get_session)
 ):
-    stmt = select(Airport).where(Airport.code == airport_code)
+    stmt = (
+        select(Airport)
+        .join(City, Airport.city_id == City.id)
+        .where(Airport.code == airport_code)
+    )
     result = session.execute(stmt)
     try:
         airport = result.scalars().one()

@@ -105,7 +105,7 @@ def generate_flight_report(
     )
 
 
-@router.get("/{flight_number}/seatsmap", tags=["flights"], response_model=list[FlightSeatsMap])
+@router.get("/{flight_number}/seatmap", tags=["flights"], response_model=FlightSeatsMap)
 def read_seats_map(flight_number: str, session: Session = Depends(get_session)):
     """
     Returns which seats are reserved and which are not for specified flight.
@@ -129,8 +129,17 @@ def read_seats_map(flight_number: str, session: Session = Depends(get_session)):
         .where(Seat.aircraft_id == flight.aircraft_id)
     )
     result = session.execute(stmt)
-    return result.mappings().all()
-
+    seats = result.mappings().all()
+    seat_numbers = [seat["seat_number"] for seat in seats]
+    rows = sorted(set(int(seat_number[0:-1]) for seat_number in seat_numbers))
+    cols = sorted(set(seat_number[-1] for seat_number in seat_numbers))
+    seats_dict = {seat["seat_number"]: {"seat_class": seat["seat_class"], "is_reserved": seat["is_reserved"]}
+                  for seat in seats}
+    return {
+        "rows": rows,
+        "cols": cols,
+        "seats": seats_dict
+    }
 
 
 @router.delete("/{flight_number}", tags=["flights"])
