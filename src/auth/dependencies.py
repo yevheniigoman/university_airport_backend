@@ -9,7 +9,7 @@ from typing import Generator
 
 def get_user_db(
     session: Session = Depends(get_session)
-) -> Generator[SQLAlchemyUserDatabase]:
+):
     yield SQLAlchemyUserDatabase(session, User)
 
 def get_user_manager(user_db = Depends(get_user_db)) -> UserManager:

@@ -7,10 +7,11 @@ from sqlalchemy import select, exc, case
 from sqlalchemy.orm import Session, aliased
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse
+from services.route_service import RouteService
 
 
 router = APIRouter(prefix="/flights")
-
+route_service = RouteService()
 
 @router.get("/{flight_number}", tags=["flights"], response_model=FlightRead)
 def read_flight(
@@ -51,6 +52,17 @@ def create_flight(
 
     session.add(flight)
     session.commit()
+
+    # Neo4j sync
+    try:
+        route_service.sync_flight_created(flight)
+    except Exception as e:
+        return JSONResponse(
+            {"success": False, "errors": [f"Neo4j sync failed: {str(e)}"]},
+            status_code=500
+        )
+
+
     return JSONResponse({"success": True, "errors": []}, status_code=200)
 
 
@@ -105,7 +117,7 @@ def read_seats_map(flight_number: str, session: Session = Depends(get_session)):
         flight = result.scalars().one()
     except exc.NoResultFound:
         raise HTTPException(status_code=404, detail="No flight found")
-    
+
     # get all seats (and whether it is reserved or not) for this flight
     seat_status_expr = case(
         (Ticket.id.is_not(None), True),
@@ -128,3 +140,45 @@ def read_seats_map(flight_number: str, session: Session = Depends(get_session)):
         "cols": cols,
         "seats": seats_dict
     }
+
+
+@router.delete("/{flight_number}", tags=["flights"])
+def delete_flight(
+    flight_number: str,
+    session: Session = Depends(get_session)
+):
+
+    flight = session.query(Flight).filter_by(flight_number=flight_number).first()
+
+    if not flight:
+        return JSONResponse(
+            {"success": False, "errors": [f"Flight '{flight_number}' not found"]},
+            status_code=404
+        )
+
+    # Save codes before delete
+    dep_code = flight.dep_airport.code
+    arr_code = flight.arr_airport.code
+
+    # Delete Neo4j edge first
+    try:
+        route_service.delete_flight_edge(
+            dep_code=dep_code,
+            arr_code=arr_code,
+            flight_number=flight_number
+        )
+    except Exception as e:
+        return JSONResponse(
+            {"success": False, "errors": [f"Neo4j sync failed: {str(e)}"]},
+            status_code=500
+        )
+
+    # Delete from MySQL
+    try:
+        session.delete(flight)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        return JSONResponse({"success": False, "errors": [str(e)]}, status_code=422)
+
+    return JSONResponse({"success": True, "errors": []}, status_code=200)
