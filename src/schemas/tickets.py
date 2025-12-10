@@ -1,24 +1,15 @@
-from pydantic import BaseModel, ConfigDict, Field
-from decimal import Decimal
+from pydantic import BaseModel, Field
+from dataclasses import dataclass
 
 
-class FlightInTicketRead(BaseModel):
+@dataclass
+class Passenger:
+    first_name: str
+    last_name: str
+
+
+class TicketCreate(BaseModel):
     flight_number: str = Field(max_length=5)
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class SeatInTicketRead(BaseModel):
     seat_number: str = Field(max_length=3)
-    seat_class: int = Field(ge=1, le=2)
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class TicketRead(BaseModel):
-    flight: FlightInTicketRead
-    seat: SeatInTicketRead
-    price: Decimal
-    status: int = Field(ge=0, le=1)
-
-    model_config = ConfigDict(from_attributes=True)
+    first_name: str = Field(max_length=50)
+    last_name: str = Field(max_length=50)

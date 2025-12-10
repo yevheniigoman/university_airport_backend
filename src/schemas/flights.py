@@ -2,7 +2,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from decimal import Decimal
 from datetime import datetime
-from typing import TypedDict
 
 
 class AircraftInFlightRead(BaseModel):
@@ -23,6 +22,32 @@ class FlightRead(BaseModel):
     aircraft: AircraftInFlightRead
     dep_airport: AirportInFlightRead
     arr_airport: AirportInFlightRead
+    departure_time: datetime
+    arrival_time: datetime
+    economy_available_seats: int = Field(ge=0)
+    business_available_seats: int = Field(ge=0)
+    economy_price: Decimal = Field(ge=1)
+    business_price: Decimal = Field(ge=1)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CityRead(BaseModel):
+    name: str = Field(max_length=50)
+
+
+class AirportInFlightReadWithCities(BaseModel):
+    code: str = Field(max_length=3)
+    city: CityRead
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FlightReadWithCities(BaseModel):
+    flight_number: str = Field(max_length=5)
+    aircraft: AircraftInFlightRead
+    dep_airport: AirportInFlightReadWithCities
+    arr_airport: AirportInFlightReadWithCities
     departure_time: datetime
     arrival_time: datetime
     economy_available_seats: int = Field(ge=0)

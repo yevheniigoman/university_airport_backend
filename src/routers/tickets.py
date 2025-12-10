@@ -1,28 +1,63 @@
 from dependencies import get_session
-from models import Flight
-from schemas.tickets import TicketRead
+from models import Flight, Seat, Ticket
+from schemas.tickets import TicketCreate, Passenger
+from services import TicketService, TicketReportService
 from sqlalchemy import select, exc
-from sqlalchemy.orm import Session, joinedload
-from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Response
 
 
-router = APIRouter()
+router = APIRouter(prefix="/tickets")
 
-@router.get("/flights/{flight_number}/tickets", tags=["tickets"], response_model=list[TicketRead])
-def read_flight_tickets(
-    flight_number: str,
+
+@router.post("/", tags=["tickets"])
+def create_ticket(
+    ticket_data: TicketCreate,
     session: Session = Depends(get_session)
 ):
-    """Returns tickets for specified flight."""
-    stmt = (
-        select(Flight)
-        .options(joinedload(Flight.tickets))
-        .where(Flight.flight_number == flight_number)
-    )
+    # find flight
+    stmt = select(Flight).where(Flight.flight_number == ticket_data.flight_number)
     result = session.execute(stmt)
     try:
-        flight = result.unique().scalars().one()
+        flight = result.scalars().one()
     except exc.NoResultFound:
         raise HTTPException(status_code=404, detail="Flight not found")
 
-    return flight.tickets
+    # find seat
+    stmt = (
+        select(Seat)
+        .where(Seat.aircraft_id == flight.aircraft_id)
+        .where(Seat.seat_number == ticket_data.seat_number)
+    )
+    result = session.execute(stmt)
+    try:
+        seat = result.scalars().one()
+    except exc.NoResultFound:
+        raise HTTPException(status_code=404, detail="Seat not found")
+    
+    passanger = Passenger(ticket_data.first_name, ticket_data.last_name)
+
+    try:
+        ticket = TicketService.buy(session, passanger, flight, seat)
+    except:
+        raise HTTPException(status_code=500)
+    
+    stmt = (
+        select(Ticket)
+        .join(Flight, Ticket.flight_id == Flight.id)
+        .join(Seat, Ticket.seat_id == Seat.id)
+        .where(Ticket.id == ticket.id)
+    )
+    result = session.execute(stmt)
+    ticket = result.scalars().one()
+    pdf = TicketReportService.to_pdf(ticket)
+
+    filename = f"ticket_{ticket.id}.pdf"
+    headers = {
+        f"Content-Disposition": f"attachment; filename={filename}"
+    }
+    return Response(
+        bytes(pdf.output()),
+        media_type="application/pdf",
+        headers=headers
+    )

@@ -11,7 +11,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -31,6 +31,7 @@ app.include_router(routers.tickets.router)
 app.include_router(routers.airports.router)
 app.include_router(routers.cities.router)
 app.include_router(routers.aircrafts.router)
+app.include_router(routers.routes.router)
 
 
 @app.get("/")

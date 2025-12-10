@@ -1,7 +1,7 @@
 from dependencies import get_session
 from auth import get_current_active_user
-from models import Flight, Aircraft, Airport, Seat, Ticket
-from schemas.flights import FlightRead, FlightCreate, FlightSeatsMap
+from models import Flight, Aircraft, Airport, Seat, Ticket, City
+from schemas.flights import FlightRead, FlightReadWithCities, FlightCreate, FlightSeatsMap
 from services import FlightService, FlightReportService
 from sqlalchemy import select, exc, case
 from sqlalchemy.orm import Session, aliased
@@ -37,21 +37,38 @@ def read_flight(
     return flight
 
 
-@router.post("/", tags=["flights"], dependencies=[Depends(get_current_active_user)])
+@router.get("/", tags=["flights"], response_model=list[FlightReadWithCities])
+def read_flights(session: Session = Depends(get_session)):
+    DepAirport = aliased(Airport)
+    ArrAirport = aliased(Airport)
+    DepCity = aliased(City)
+    ArrCity = aliased(City)
+    stmt = (
+        select(Flight, DepAirport, ArrAirport, DepCity, ArrCity)
+        .join(DepAirport, Flight.dep_airport_id == DepAirport.id)
+        .join(ArrAirport, Flight.arr_airport_id == ArrAirport.id)
+        .join(DepCity, DepAirport.city_id == DepCity.id)
+        .join(ArrCity, ArrAirport.city_id == ArrCity.id)
+    )
+    result = session.execute(stmt)
+    return result.scalars().all()
+
+
+
+@router.post("/", tags=["flights"])
 def create_flight(
     flight_data: FlightCreate,
     session: Session = Depends(get_session)
 ):
     try:
         flight = FlightService.create_flight(session, flight_data)
+        session.add(flight)
+        session.commit()
     except Exception as e:
         return JSONResponse(
             {"success": False, "errors": [str(e)]},
             status_code=422
         )
-
-    session.add(flight)
-    session.commit()
 
     # Neo4j sync
     try:
@@ -62,11 +79,10 @@ def create_flight(
             status_code=500
         )
 
-
     return JSONResponse({"success": True, "errors": []}, status_code=200)
 
 
-@router.get("/{flight_number}/report", tags=["reports"], dependencies=[Depends(get_current_active_user)])
+@router.get("/{flight_number}/report", tags=["reports"])
 def generate_flight_report(
     flight_number: str,
     session: Session = Depends(get_session),
@@ -119,13 +135,18 @@ def read_seats_map(flight_number: str, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="No flight found")
 
     # get all seats (and whether it is reserved or not) for this flight
+    flight_tickets = (
+        select(Ticket)
+        .where(Ticket.flight_id == flight.id)
+        .subquery("flight_tickets")
+    )
     seat_status_expr = case(
-        (Ticket.id.is_not(None), True),
+        (flight_tickets.c.id.is_not(None), True),
         else_=False
     ).label("is_reserved")
     stmt = (
         select(Seat.seat_number, Seat.seat_class, seat_status_expr)
-        .outerjoin(Ticket, Seat.id == Ticket.seat_id)
+        .outerjoin(flight_tickets, Seat.id == flight_tickets.c.seat_id)
         .where(Seat.aircraft_id == flight.aircraft_id)
     )
     result = session.execute(stmt)
