@@ -1,6 +1,9 @@
 venv
 __pycache__
+.pytest_cache
 .env
+.env.test
 .idea
 src/test_services.py
+src/airport_test.db
 data

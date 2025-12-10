@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 class FlightService():
     @staticmethod
     def create_flight(session: Session, flight: FlightCreate) -> Flight:
+        if flight.dep_airport_code == flight.arr_airport_code:
+            raise ValueError("Departure and arrival airport must be different.")
+
         dep_airport = session.query(Airport).filter_by(code=flight.dep_airport_code).first()
         arr_airport = session.query(Airport).filter_by(code=flight.arr_airport_code).first()
         if not dep_airport or not arr_airport:
@@ -13,7 +16,7 @@ class FlightService():
 
         aircraft = session.query(Aircraft).filter_by(tail_number=flight.aircraft_tail_number).first()
         if not aircraft:
-            raise ValueError("Invalid aircraft tail number.")
+            raise ValueError(f"Aircraft with tail number {flight.aircraft_tail_number} already exists.")
 
         if not isinstance(flight.departure_time, datetime):
             raise TypeError("departure_time must be datetime.")

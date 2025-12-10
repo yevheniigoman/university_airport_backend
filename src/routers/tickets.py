@@ -22,7 +22,7 @@ def create_ticket(
         flight = result.scalars().one()
     except exc.NoResultFound:
         raise HTTPException(status_code=404, detail="Flight not found")
-    
+
     # find seat
     stmt = (
         select(Seat)
