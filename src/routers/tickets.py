@@ -39,8 +39,8 @@ def create_ticket(
 
     try:
         ticket = TicketService.buy(session, passanger, flight, seat)
-    except:
-        raise HTTPException(status_code=500)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
     
     stmt = (
         select(Ticket)
