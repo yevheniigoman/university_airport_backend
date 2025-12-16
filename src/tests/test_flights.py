@@ -94,3 +94,8 @@ def test_create_flight_departure_greater_than_arrival(client: TestClient):
     )
 
     assert response.status_code == 422, "Invalid status code"
+
+
+def test_delete_flight(client: TestClient):
+    response = client.delete("/flights/TS001")
+    assert response.status_code == 200, "Invalid status code"
