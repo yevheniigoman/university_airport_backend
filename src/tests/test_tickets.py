@@ -67,20 +67,6 @@ def tickets_client_fixture(client: TestClient):
 
 
 def test_buy_ticket(tickets_client: TestClient):
-    # client.post(
-    #     "/flights/",
-    #     json={
-    #         "flight_number": "TS001",
-    #         "aircraft_tail_number": "TS-0001",
-    #         "dep_airport_code": "A01",
-    #         "arr_airport_code": "A02",
-    #         "departure_time": datetime(2025, 10, 12, 9, 0, 0).strftime("%Y-%m-%d %H:%M:%S"),
-    #         "arrival_time": datetime(2025, 10, 13, 9, 0, 0).strftime("%Y-%m-%d %H:%M:%S"),
-    #         "economy_price": "150",
-    #         "business_price": "300",
-    #     }
-    # )
-
     response = tickets_client.post(
         "/tickets/",
         json={
@@ -94,20 +80,6 @@ def test_buy_ticket(tickets_client: TestClient):
 
 
 def test_buy_already_reserved_ticket(tickets_client: TestClient):
-    # client.post(
-    #     "/flights/",
-    #     json={
-    #         "flight_number": "TS001",
-    #         "aircraft_tail_number": "TS-0001",
-    #         "dep_airport_code": "A01",
-    #         "arr_airport_code": "A02",
-    #         "departure_time": datetime(2025, 10, 12, 9, 0, 0).strftime("%Y-%m-%d %H:%M:%S"),
-    #         "arrival_time": datetime(2025, 10, 13, 9, 0, 0).strftime("%Y-%m-%d %H:%M:%S"),
-    #         "economy_price": "150",
-    #         "business_price": "300",
-    #     }
-    # )
-
     tickets_client.post(
         "/tickets/",
         json={
@@ -130,20 +102,6 @@ def test_buy_already_reserved_ticket(tickets_client: TestClient):
 
 
 def test_buy_ticket_invalid_seat(tickets_client: TestClient):
-    # client.post(
-    #     "/flights/",
-    #     json={
-    #         "flight_number": "TS001",
-    #         "aircraft_tail_number": "TS-0001",
-    #         "dep_airport_code": "A01",
-    #         "arr_airport_code": "A02",
-    #         "departure_time": datetime(2025, 10, 12, 9, 0, 0).strftime("%Y-%m-%d %H:%M:%S"),
-    #         "arrival_time": datetime(2025, 10, 13, 9, 0, 0).strftime("%Y-%m-%d %H:%M:%S"),
-    #         "economy_price": "150",
-    #         "business_price": "300",
-    #     }
-    # )
-
     response = tickets_client.post(
         "/tickets/",
         json={

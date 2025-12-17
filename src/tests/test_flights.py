@@ -4,7 +4,7 @@ from config import get_settings
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
 from datetime import datetime
@@ -57,7 +57,7 @@ def test_create_flight(client: TestClient):
             "business_price": "300",
         }
     )
-    assert response.status_code == 200, response.content
+    assert response.status_code == 200, "Invalid status code"
 
 
 def test_create_flight_same_airports(client: TestClient):
